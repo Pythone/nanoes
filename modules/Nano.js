@@ -3,20 +3,25 @@ import File from './File.js';
 export default class Nano {
   #version;
 
-  #fileNameElement;
-
-  #textAreaElement;
-
   #openedFiles;
 
   #shownFile;
 
-  constructor(fileNameElement, textAreaElement) {
+  #fileName;
+
+  #textArea;
+
+  #cursor;
+
+  constructor(fileName, textArea, cursor) {
     this.#version = '1.0.0';
-    this.#fileNameElement = fileNameElement;
-    this.#textAreaElement = textAreaElement;
+    document.getElementById('version').appendChild(document.createTextNode(this.#version));
     this.#openedFiles = {};
-    this.visit('New file');
+    this.#fileName = document.getElementById(fileName);
+    this.#textArea = document.getElementById(textArea);
+    this.#cursor = document.getElementById(cursor);
+    this.#visit('new file');
+    document.addEventListener('keydown', (event) => this.#listen(event));
   }
 
   get version() {
@@ -27,25 +32,55 @@ export default class Nano {
     return this.#openedFiles;
   }
 
-  open(fileName) {
+  get shownFile() {
+    return this.#shownFile;
+  }
+
+  #open(fileName) {
     if (this.#openedFiles[fileName] == null) {
       this.#openedFiles[fileName] = new File(fileName);
     }
   }
 
-  show(fileName) {
+  #show(fileName) {
     this.#shownFile = this.#openedFiles[fileName];
-    this.#fileNameElement.innerText = fileName;
+    this.#fileName.innerText = fileName;
   }
 
-  visit(fileName) {
-    this.open(fileName);
-    if (this.#openedFiles[fileName] != null) {
-      this.show(fileName);
+  #visit(fileName) {
+    this.#open(fileName);
+    if (this.#openedFiles[fileName]) {
+      this.#show(fileName);
     }
   }
 
-  write(text) {
-    this.#textAreaElement.innerHTML += text;
+  #delete(node) {
+    if (node) {
+      this.#textArea.removeChild(node);
+    }
+  }
+
+  #insert(character) {
+    const child = document.createElement('span');
+    child.appendChild(document.createTextNode(character));
+    this.#textArea.insertBefore(child, this.#cursor);
+  }
+
+  #listen(event) {
+    const { key } = event;
+    switch (key) {
+      case 'Backspace':
+      case 'Delete':
+        this.#delete(this.#cursor.previousSibling);
+        break;
+      case 'Control':
+        break;
+      case 'Alt':
+        break;
+      case 'Shift':
+        break;
+      default:
+        this.#insert(event.key);
+    }
   }
 }

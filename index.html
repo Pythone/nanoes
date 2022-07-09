@@ -10,16 +10,16 @@
     <div
       class="flex flex-col my-auto px-4 md:px-16 lg:px-24 py-20 h-screen space-y-4 mx-auto">
       <section class="py-2 px-4 text-primary bg-white flex relative">
-        <h1>nanoes 1.0.0</h1>
+        <h1>nanoes <span id="version"></span></h1>
         <h3 class="absolute left-1/2 -translate-x-1/2">
           <span id="file-name"></span>
         </h3>
       </section>
-      <section class="h-full">
+      <div class="h-full">
         <div class="w-full bg-primary text-white" id="text-area">
-          <span class="animate-pulse bg-white">|</span>
+          <span id="cursor" class="animate-pulse bg-white">|</span>
         </div>
-      </section>
+      </div>
       <section class="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6" style="margin-top: auto">
         <h4 class="text-white">
           <span class="bg-white text-primary">^G</span>
