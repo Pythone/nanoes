@@ -20,7 +20,7 @@ export default class Nano {
     this.#fileName = document.getElementById(fileName);
     this.#textArea = document.getElementById(textArea);
     this.#cursor = document.getElementById(cursor);
-    this.#visit('new file');
+    this.#visit(new File('new file'));
     document.addEventListener('keydown', (event) => this.#listen(event));
   }
 
@@ -36,51 +36,112 @@ export default class Nano {
     return this.#shownFile;
   }
 
-  #open(fileName) {
-    if (this.#openedFiles[fileName] == null) {
-      this.#openedFiles[fileName] = new File(fileName);
+  #open(file) {
+    if (!this.#openedFiles[file.name]) {
+      this.#openedFiles[file.name] = file;
     }
   }
 
-  #show(fileName) {
-    this.#shownFile = this.#openedFiles[fileName];
-    this.#fileName.innerText = fileName;
-  }
-
-  #visit(fileName) {
-    this.#open(fileName);
-    if (this.#openedFiles[fileName]) {
-      this.#show(fileName);
+  #show(file) {
+    this.#shownFile = this.#openedFiles[file.name];
+    while (this.#fileName.lastChild) {
+      this.#fileName.removeChild(this.#fileName.lastChild);
+    }
+    this.#fileName.appendChild(document.createTextNode(file.name));
+    this.#clear();
+    for (let i = 0; i < this.#shownFile.content.length; i += 1) {
+      const character1 = this.#shownFile.content.charAt(i);
+      const character2 = this.#shownFile.content.charAt(i + 1);
+      if (character1 === '\\' && character2 === 'n') {
+        this.#insertNewLine();
+        i += 1;
+      } else {
+        this.#insert(character1);
+      }
     }
   }
 
-  #delete(node) {
+  #visit(file) {
+    this.#open(file);
+    console.log(this.#openedFiles);
+    if (this.#openedFiles[file.name]) {
+      this.#show(file);
+    }
+  }
+
+  #delete() {
+    const node = this.#cursor.previousSibling;
     if (node) {
       this.#textArea.removeChild(node);
     }
   }
 
+  #clear() {
+    while (this.#textArea.firstChild) {
+      this.#textArea.removeChild(this.#textArea.firstChild);
+    }
+    this.#textArea.appendChild(this.#cursor);
+  }
+
+  #insertNewLine() {
+    const node = document.createElement('br');
+    this.#textArea.insertBefore(node, this.#cursor);
+  }
+
   #insert(character) {
-    const child = document.createElement('span');
-    child.appendChild(document.createTextNode(character));
-    this.#textArea.insertBefore(child, this.#cursor);
+    // this.#shownFile.write(character);
+    this.#textArea.insertBefore(document.createTextNode(character), this.#cursor);
   }
 
   #listen(event) {
-    const { key } = event;
-    switch (key) {
-      case 'Backspace':
-      case 'Delete':
-        this.#delete(this.#cursor.previousSibling);
-        break;
-      case 'Control':
-        break;
-      case 'Alt':
-        break;
-      case 'Shift':
-        break;
-      default:
-        this.#insert(event.key);
+    const {
+      key, ctrlKey, altKey, shiftKey,
+    } = event;
+    console.log(key);
+    if (ctrlKey) {
+      switch (key) {
+        case 'g': {
+          const file = new File('help');
+          file.insert(`^key = ctrl + key\n
+^g to get help\\n
+^o to write out\\n
+^w for where is\\n
+^k to cut text\\n
+^j to justify\\n
+^c for current position\\n
+^x to exit\\n
+^r to read file\\n
+^\\ to replace\\n
+^u to paste text\\n
+^t to spell\\n
+^_ to go to line`);
+          this.#visit(file);
+          break;
+        }
+        default:
+      }
+    } else if (altKey) {
+      switch (key) {
+        case '<':
+          break;
+        case '>':
+          break;
+        default:
+      }
+    } else {
+      switch (key) {
+        case 'Backspace':
+        case 'Delete':
+          this.#delete();
+          break;
+        case 'Enter':
+          this.#insertNewLine();
+          break;
+        default:
+          if (key.length < 2) {
+            this.#insert(key);
+          }
+      }
     }
   }
 }

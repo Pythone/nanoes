@@ -16,7 +16,7 @@ export default class File {
     return this.#content;
   }
 
-  write(text) {
+  insert(text) {
     this.#content += text;
   }
 }
