@@ -16,7 +16,7 @@ export default class Nano {
   constructor(fileName, textArea, cursor) {
     this.#version = '1.0.0';
     document.getElementById('version').appendChild(document.createTextNode(this.#version));
-    this.#openedFiles = {};
+    this.#openedFiles = [];
     this.#fileName = document.getElementById(fileName);
     this.#textArea = document.getElementById(textArea);
     this.#cursor = document.getElementById(cursor);
@@ -37,13 +37,16 @@ export default class Nano {
   }
 
   #open(file) {
-    if (!this.#openedFiles[file.name]) {
-      this.#openedFiles[file.name] = file;
-    }
+    this.#openedFiles.push(file);
   }
 
   #show(file) {
-    this.#shownFile = this.#openedFiles[file.name];
+    for (let i = 0; i < this.#openedFiles.length; i += 1) {
+      if (this.#openedFiles[i] === file) {
+        this.#shownFile = file;
+        break;
+      }
+    }
     while (this.#fileName.lastChild) {
       this.#fileName.removeChild(this.#fileName.lastChild);
     }
@@ -63,10 +66,7 @@ export default class Nano {
 
   #visit(file) {
     this.#open(file);
-    console.log(this.#openedFiles);
-    if (this.#openedFiles[file.name]) {
-      this.#show(file);
-    }
+    this.#show(file);
   }
 
   #delete() {
@@ -89,7 +89,6 @@ export default class Nano {
   }
 
   #insert(character) {
-    // this.#shownFile.write(character);
     this.#textArea.insertBefore(document.createTextNode(character), this.#cursor);
   }
 
@@ -97,7 +96,6 @@ export default class Nano {
     const {
       key, ctrlKey, altKey, shiftKey,
     } = event;
-    console.log(key);
     if (ctrlKey) {
       switch (key) {
         case 'g': {
@@ -122,10 +120,20 @@ export default class Nano {
       }
     } else if (altKey) {
       switch (key) {
-        case '<':
+        case '<': {
+          const file = this.#openedFiles[this.#openedFiles.indexOf(this.#shownFile) - 1];
+          if (file) {
+            this.#show(file);
+          }
           break;
-        case '>':
+        }
+        case '>': {
+          const file = this.#openedFiles[this.#openedFiles.indexOf(this.#shownFile) + 1];
+          if (file) {
+            this.#show(file);
+          }
           break;
+        }
         default:
       }
     } else {
@@ -139,6 +147,7 @@ export default class Nano {
           break;
         default:
           if (key.length < 2) {
+            this.#shownFile.insert(key);
             this.#insert(key);
           }
       }
