@@ -23,18 +23,18 @@ export default class Nano {
 
   #fileName;
 
-  #textArea;
+  #editWindow;
 
   #cursor;
 
-  constructor(fileName, textArea, cursor) {
+  constructor(fileName, editWindow, cursor) {
     this.#version = '1.0.0';
     document.getElementById('version').appendChild(document.createTextNode(this.#version));
     this.#openedFiles = [];
     this.#fileName = document.getElementById(fileName);
-    this.#textArea = document.getElementById(textArea);
+    this.#editWindow = document.getElementById(editWindow);
     this.#cursor = document.getElementById(cursor);
-    this.#visit(new File('new file'));
+    this.#visit(new File('New file'));
     document.addEventListener('keydown', (event) => this.#listen(event));
   }
 
@@ -86,23 +86,23 @@ export default class Nano {
   #delete() {
     const node = this.#cursor.previousSibling;
     if (node) {
-      this.#textArea.removeChild(node);
+      this.#editWindow.removeChild(node);
     }
   }
 
   #clear() {
-    while (this.#textArea.firstChild) {
-      this.#textArea.removeChild(this.#textArea.firstChild);
+    while (this.#editWindow.firstChild) {
+      this.#editWindow.removeChild(this.#editWindow.firstChild);
     }
-    this.#textArea.appendChild(this.#cursor);
+    this.#editWindow.appendChild(this.#cursor);
   }
 
   #insertNewLine() {
-    this.#textArea.insertBefore(document.createElement('br'), this.#cursor);
+    this.#editWindow.insertBefore(document.createElement('br'), this.#cursor);
   }
 
   #insert(character) {
-    this.#textArea.insertBefore(document.createTextNode(character), this.#cursor);
+    this.#editWindow.insertBefore(document.createTextNode(character), this.#cursor);
   }
 
   #listen(event) {
@@ -157,6 +157,7 @@ export default class Nano {
           this.#delete();
           break;
         case 'Enter':
+          this.#shownFile.insert('\n');
           this.#insertNewLine();
           break;
         default:
