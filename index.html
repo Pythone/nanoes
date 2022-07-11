@@ -1,28 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en-gb">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>nanoes</title>
-    <link href="./output.css" rel="stylesheet">
+    <link href="./output.css" rel="stylesheet" />
   </head>
-  <body class="min-h-screen bg-primary font-mono">
+  <body class="min-h-screen font-mono bg-primary">
     <div
-      class="flex flex-col my-auto px-4 md:px-16 lg:px-24 py-20 h-screen space-y-4 mx-auto">
-      <section class="py-2 px-4 text-primary bg-white flex relative">
+      class="flex flex-col h-screen px-4 py-20 mx-auto my-auto space-y-4 md:px-16 lg:px-24"
+    >
+      <section class="relative flex px-4 py-2 bg-white text-primary">
         <h1>nanoes <span id="version"></span></h1>
-        <h3 class="absolute left-1/2 -translate-x-1/2">
+        <h3 class="absolute -translate-x-1/2 left-1/2">
           <span id="file-name"></span>
         </h3>
       </section>
-      <div class="h-full">
-        <div class="w-full bg-primary text-white">
-	  <pre id="text-area">
-	    <span id="cursor" class="animate-pulse bg-white">|</span>
-	  </pre>
+      <div class="flex-1 overflow-auto">
+        <div class="w-full text-white bg-primary">
+          <!-- prettier-ignore -->
+          <pre id="text-area"><span id="cursor" class="bg-white animate-pulse">|</span>
+          </pre>
         </div>
       </div>
-      <section class="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6" style="margin-top: auto">
+
+      <div
+        class="flex justify-between w-full max-w-2xl px-2 py-2 mx-auto my-1 bg-white"
+        style="visibility: visible"
+      >
+        <span>[</span>
+        <span id="alert">Alert Message</span>
+        <span>]</span>
+      </div>
+      <section
+        class="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+        style="margin-top: auto"
+      >
         <h4 class="text-white">
           <span class="bg-white text-primary">^G</span>
           Get Help
@@ -73,7 +86,9 @@
         </h4>
       </section>
     </div>
-    <a href="/about/javascript" data-jslicense="1" hidden>JavaScript license information</a>
+    <a href="/about/javascript" data-jslicense="1" hidden
+      >JavaScript license information</a
+    >
     <script type="module" src="main.js"></script>
   </body>
 </html>
