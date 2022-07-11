@@ -1,3 +1,17 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 import File from './File.js';
 
 export default class Nano {
@@ -47,8 +61,8 @@ export default class Nano {
         break;
       }
     }
-    while (this.#fileName.lastChild) {
-      this.#fileName.removeChild(this.#fileName.lastChild);
+    while (this.#fileName.firstChild) {
+      this.#fileName.removeChild(this.#fileName.firstChild);
     }
     this.#fileName.appendChild(document.createTextNode(file.name));
     this.#clear();
@@ -84,8 +98,7 @@ export default class Nano {
   }
 
   #insertNewLine() {
-    const node = document.createElement('br');
-    this.#textArea.insertBefore(node, this.#cursor);
+    this.#textArea.insertBefore(document.createElement('br'), this.#cursor);
   }
 
   #insert(character) {
@@ -93,6 +106,7 @@ export default class Nano {
   }
 
   #listen(event) {
+    event.preventDefault();
     const {
       key, ctrlKey, altKey, shiftKey,
     } = event;
