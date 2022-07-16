@@ -25,17 +25,21 @@ export default class Nano {
 
   #editWindow;
 
+  #statusBar;
+
   #cursor;
 
-  constructor(fileName, editWindow, cursor) {
+  constructor(fileName, editWindow, statusBar, cursor) {
     this.#version = '1.0.0';
     document.getElementById('version').appendChild(document.createTextNode(this.#version));
     this.#openedFiles = [];
     this.#fileName = document.getElementById(fileName);
     this.#editWindow = document.getElementById(editWindow);
+    this.#editWindow.focus();
+    this.#editWindow.addEventListener('keydown', (event) => this.#listen(event));
+    this.#statusBar = document.getElementById(statusBar);
     this.#cursor = document.getElementById(cursor);
     this.#visit(new File('New file'));
-    document.addEventListener('keydown', (event) => this.#listen(event));
   }
 
   get version() {
@@ -65,7 +69,8 @@ export default class Nano {
       this.#fileName.removeChild(this.#fileName.firstChild);
     }
     this.#fileName.appendChild(document.createTextNode(file.name));
-    this.#clear();
+    Nano.#clear(this.#editWindow);
+    this.#editWindow.appendChild(this.#cursor);
     for (let i = 0; i < this.#shownFile.content.length; i += 1) {
       const character1 = this.#shownFile.content.charAt(i);
       const character2 = this.#shownFile.content.charAt(i + 1);
@@ -90,11 +95,13 @@ export default class Nano {
     }
   }
 
-  #clear() {
-    while (this.#editWindow.firstChild) {
-      this.#editWindow.removeChild(this.#editWindow.firstChild);
+  static #clear(node) {
+    if (!node) {
+      return;
     }
-    this.#editWindow.appendChild(this.#cursor);
+    while (node.firstChild) {
+      node.removeChild(node.firstChild);
+    }
   }
 
   #insertNewLine() {
@@ -105,8 +112,28 @@ export default class Nano {
     this.#editWindow.insertBefore(document.createTextNode(character), this.#cursor);
   }
 
+  #showStatus(text, code) {
+    Nano.#clear(this.#statusBar);
+    this.#statusBar.appendChild(document.createTextNode(text));
+    switch (code) {
+      case 0:
+        this.#statusBar.style.backgroundColor = '#fff';
+        break;
+      case 1:
+        this.#statusBar.style.backgroundColor = '#c00';
+        break;
+      default:
+    }
+    if (this.#statusBar.parentNode.style.visibility === 'hidden') {
+      this.#statusBar.parentNode.style.visibility = 'visible';
+    }
+  }
+
   #listen(event) {
     event.preventDefault();
+    if (this.#statusBar.parentNode.style.visibility !== 'hidden') {
+      this.#statusBar.parentNode.style.visibility = 'hidden';
+    }
     const {
       key, ctrlKey, altKey, shiftKey,
     } = event;
@@ -138,6 +165,8 @@ export default class Nano {
           const file = this.#openedFiles[this.#openedFiles.indexOf(this.#shownFile) - 1];
           if (file) {
             this.#show(file);
+          } else {
+            this.#showStatus('no preceding file to be switched to');
           }
           break;
         }
@@ -145,6 +174,8 @@ export default class Nano {
           const file = this.#openedFiles[this.#openedFiles.indexOf(this.#shownFile) + 1];
           if (file) {
             this.#show(file);
+          } else {
+            this.#showStatus('no succeeding file to be switched to');
           }
           break;
         }
@@ -153,7 +184,6 @@ export default class Nano {
     } else {
       switch (key) {
         case 'Backspace':
-        case 'Delete':
           this.#delete();
           break;
         case 'Enter':
