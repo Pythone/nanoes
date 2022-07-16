@@ -117,10 +117,12 @@ export default class Nano {
     this.#statusBar.appendChild(document.createTextNode(text));
     switch (code) {
       case 0:
-        this.#statusBar.style.backgroundColor = '#fff';
+        this.#statusBar.parentNode.style.backgroundColor = '#fff';
+        this.#statusBar.parentNode.style.color = '#000';
         break;
       case 1:
-        this.#statusBar.style.backgroundColor = '#c00';
+        this.#statusBar.parentNode.style.backgroundColor = '#c00';
+        this.#statusBar.parentNode.style.color = '#fff';
         break;
       default:
     }
@@ -166,7 +168,7 @@ export default class Nano {
           if (file) {
             this.#show(file);
           } else {
-            this.#showStatus('no preceding file to be switched to');
+            this.#showStatus('no preceding file to be switched to', 1);
           }
           break;
         }
@@ -175,7 +177,7 @@ export default class Nano {
           if (file) {
             this.#show(file);
           } else {
-            this.#showStatus('no succeeding file to be switched to');
+            this.#showStatus('no succeeding file to be switched to', 1);
           }
           break;
         }
