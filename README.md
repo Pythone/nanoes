@@ -1,3 +1,23 @@
 # nanoes
-it is a [text editor](https://github.com/collections/text-editors) for [mozilla firefox](https://www.mozilla.org/en-GB/firefox/new/) inspired by [gnu nano](https://www.nano-editor.org/) and pronounced as the ipa symbols /'næn.əʊz/
-> To get modules to work correctly in a browser, you need to make sure that your server is serving them with a Content-Type header that contains a JavaScript MIME type such as text/javascript. If you don't, you'll get a strict MIME type checking error along the lines of "The server responded with a non-JavaScript MIME type" and the browser won't run your JavaScript. Most servers already set the correct type for .js files, but not yet for .mjs files. Servers that already serve .mjs files correctly include [GitHub Pages](https://pages.github.com/) and [http-server](https://github.com/http-party/http-server#readme) for Node.js. - [Mozilla](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)
+== We're Using GitHub Under Protest ==
+
+This project is currently hosted on GitHub.  This is not ideal; GitHub is a
+proprietary, trade-secret system that is not Free and Open Souce Software
+(FOSS).  We are deeply concerned about using a proprietary system like GitHub
+to develop our FOSS project.  We have an
+[open {bug ticket, mailing list thread, etc.} ](INSERT_LINK) where the
+project contributors are actively discussing how we can move away from GitHub
+in the long term.  We urge you to read about the
+[Give up GitHub](https://GiveUpGitHub.org) campaign from
+[the Software Freedom Conservancy](https://sfconservancy.org) to understand
+some of the reasons why GitHub is not a good place to host FOSS projects.
+
+If you are a contributor who personally has already quit using GitHub, please
+[check this resource](INSERT_LINK) for how to send us contributions without
+using GitHub directly.
+
+Any use of this project's code by GitHub Copilot, past or present, is done
+without our permission.  We do not consent to GitHub's use of this project's
+code in Copilot.
+
+![Logo of the GiveUpGitHub campaign](https://sfconservancy.org/img/GiveUpGitHub.png)
