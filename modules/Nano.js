@@ -112,7 +112,7 @@ export default class Nano {
     this.#editWindow.insertBefore(document.createTextNode(character), this.#cursor);
   }
 
-  #showStatus(text, code) {
+  showStatus(text, code) {
     Nano.#clear(this.#statusBar);
     this.#statusBar.appendChild(document.createTextNode(text));
     switch (code) {
@@ -156,6 +156,7 @@ export default class Nano {
 ^u to paste text\\n
 ^t to spell\\n
 ^_ to go to line`);
+          file.isReadOnly = true;
           this.#visit(file);
           break;
         }
@@ -168,7 +169,7 @@ export default class Nano {
           if (file) {
             this.#show(file);
           } else {
-            this.#showStatus('no preceding file to be switched to', 1);
+            this.showStatus('no preceding file to be switched to', 1);
           }
           break;
         }
@@ -177,7 +178,7 @@ export default class Nano {
           if (file) {
             this.#show(file);
           } else {
-            this.#showStatus('no succeeding file to be switched to', 1);
+            this.showStatus('no succeeding file to be switched to', 1);
           }
           break;
         }
@@ -185,19 +186,39 @@ export default class Nano {
       }
     } else {
       switch (key) {
-        case 'Backspace':
+      case 'Backspace':
+        if (this.#shownFile.insert(key)) {
           this.#delete();
+        } else {
+          this.showStatus('file is read-only', 1)
+        }
           break;
-        case 'Enter':
+      case 'Enter':
+        if (this.#shownFile.insert(key)) {
           this.#shownFile.insert('\n');
           this.#insertNewLine();
-          break;
-        default:
-          if (key.length < 2) {
-            this.#shownFile.insert(key);
+        } else {
+          this.showStatus('file is read-only', 1)
+        }
+        break;
+      default:
+        if (key.length < 2) {
+          if (this.#shownFile.insert(key)) {
             this.#insert(key);
+          } else {
+            this.showStatus('file is read-only', 1)
           }
+        }
       }
     }
+  }
+
+  load(feature) {
+    feature.evaluate(this);
+    this.showStatus(feature.name + ' is loaded');
+  }
+
+  afterLoad() {
+    this.showStatus("Welcome to nanoes. For basic help, type Ctrl+G.");
   }
 }

@@ -12,39 +12,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-export default class File {
-  #name;
-
-  #content;
-
-  #isReadOnly;
-
-  constructor(name) {
-    this.#name = name;
-    this.#content = '';
-  }
+export default class Kb {
+  #name = 'kb';
 
   get name() {
     return this.#name;
   }
 
-  get content() {
-    return this.#content;
-  }
-
-  get isReadOnly() {
-    return this.#isReadOnly;
-  }
-
-  set isReadOnly(value) {
-    this.#isReadOnly = value;
-  }
-
-  insert(character) {
-    if (this.#isReadOnly) {
-      return false;
-    }
-    this.#content += character;
-    return true;
+  evaluate(nano) {
+    nano.showStatus(this.#name + ' is loading')
   }
 }
