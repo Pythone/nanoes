@@ -12,6 +12,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 import File from './File.js';
 
 export default class Nano {
@@ -31,15 +32,17 @@ export default class Nano {
 
   constructor(fileName, editWindow, statusBar, cursor) {
     this.#version = '1.0.0';
+    this.#shownFile = null;
     document.getElementById('version').appendChild(document.createTextNode(this.#version));
     this.#openedFiles = [];
     this.#fileName = document.getElementById(fileName);
     this.#editWindow = document.getElementById(editWindow);
     this.#editWindow.focus();
-    this.#editWindow.addEventListener('keydown', (event) => this.#listen(event));
+    this.#editWindow.addEventListener('keydown', (event) => this.listen(event));
     this.#statusBar = document.getElementById(statusBar);
     this.#cursor = document.getElementById(cursor);
-    this.#visit(new File('New file'));
+    this.visit(new File('New file'));
+    this.bindings = {};
   }
 
   get version() {
@@ -54,11 +57,15 @@ export default class Nano {
     return this.#shownFile;
   }
 
-  #open(file) {
+  createFile(name) {
+    return new File(name);
+  }
+
+  open(file) {
     this.#openedFiles.push(file);
   }
 
-  #show(file) {
+  show(file) {
     for (let i = 0; i < this.#openedFiles.length; i += 1) {
       if (this.#openedFiles[i] === file) {
         this.#shownFile = file;
@@ -75,20 +82,20 @@ export default class Nano {
       const character1 = this.#shownFile.content.charAt(i);
       const character2 = this.#shownFile.content.charAt(i + 1);
       if (character1 === '\\' && character2 === 'n') {
-        this.#insertNewLine();
+        this.insertNewLine();
         i += 1;
       } else {
-        this.#insert(character1);
+        this.insert(character1);
       }
     }
   }
 
-  #visit(file) {
-    this.#open(file);
-    this.#show(file);
+  visit(file) {
+    this.open(file);
+    this.show(file);
   }
 
-  #delete() {
+  delete() {
     const node = this.#cursor.previousSibling;
     if (node) {
       this.#editWindow.removeChild(node);
@@ -104,11 +111,11 @@ export default class Nano {
     }
   }
 
-  #insertNewLine() {
+  insertNewLine() {
     this.#editWindow.insertBefore(document.createElement('br'), this.#cursor);
   }
 
-  #insert(character) {
+  insert(character) {
     this.#editWindow.insertBefore(document.createTextNode(character), this.#cursor);
   }
 
@@ -116,22 +123,23 @@ export default class Nano {
     Nano.#clear(this.#statusBar);
     this.#statusBar.appendChild(document.createTextNode(text));
     switch (code) {
-      case 0:
-        this.#statusBar.parentNode.style.backgroundColor = '#fff';
-        this.#statusBar.parentNode.style.color = '#000';
-        break;
-      case 1:
-        this.#statusBar.parentNode.style.backgroundColor = '#c00';
-        this.#statusBar.parentNode.style.color = '#fff';
-        break;
-      default:
+    case 0:
+      this.#statusBar.parentNode.style.backgroundColor = '#fff';
+      this.#statusBar.parentNode.style.color = '#000';
+      break;
+    case 1:
+      this.#statusBar.parentNode.style.backgroundColor = '#c00';
+      this.#statusBar.parentNode.style.color = '#fff';
+      break;
+    default:
     }
     if (this.#statusBar.parentNode.style.visibility === 'hidden') {
       this.#statusBar.parentNode.style.visibility = 'visible';
     }
   }
 
-  #listen(event) {
+  listen(event) {
+    let binding = '';
     event.preventDefault();
     if (this.#statusBar.parentNode.style.visibility !== 'hidden') {
       this.#statusBar.parentNode.style.visibility = 'hidden';
@@ -140,82 +148,32 @@ export default class Nano {
       key, ctrlKey, altKey, shiftKey,
     } = event;
     if (ctrlKey) {
-      switch (key) {
-        case 'g': {
-          const file = new File('help');
-          file.insert(`^key = ctrl + key\n
-^g to get help\\n
-^o to write out\\n
-^w for where is\\n
-^k to cut text\\n
-^j to justify\\n
-^c for current position\\n
-^x to exit\\n
-^r to read file\\n
-^\\ to replace\\n
-^u to paste text\\n
-^t to spell\\n
-^_ to go to line`);
-          file.isReadOnly = true;
-          this.#visit(file);
-          break;
-        }
-        default:
+      binding += 'C ';
+    }
+    if (altKey) {
+      binding += 'M ';
+    }
+    if (key.length < 2 && binding.length < 1) {
+      if (this.shownFile.insert(key)) {
+        this.insert(key);
+      } else {
+        this.showStatus('file is read-only', 1);
       }
-    } else if (altKey) {
-      switch (key) {
-        case '<': {
-          const file = this.#openedFiles[this.#openedFiles.indexOf(this.#shownFile) - 1];
-          if (file) {
-            this.#show(file);
-          } else {
-            this.showStatus('no preceding file to be switched to', 1);
-          }
-          break;
-        }
-        case '>': {
-          const file = this.#openedFiles[this.#openedFiles.indexOf(this.#shownFile) + 1];
-          if (file) {
-            this.#show(file);
-          } else {
-            this.showStatus('no succeeding file to be switched to', 1);
-          }
-          break;
-        }
-        default:
-      }
-    } else {
-      switch (key) {
-      case 'Backspace':
-        if (this.#shownFile.insert(key)) {
-          this.#delete();
-        } else {
-          this.showStatus('file is read-only', 1)
-        }
-          break;
-      case 'Enter':
-        if (this.#shownFile.insert(key)) {
-          this.#shownFile.insert('\n');
-          this.#insertNewLine();
-        } else {
-          this.showStatus('file is read-only', 1)
-        }
-        break;
-      default:
-        if (key.length < 2) {
-          if (this.#shownFile.insert(key)) {
-            this.#insert(key);
-          } else {
-            this.showStatus('file is read-only', 1)
-          }
-        }
-      }
+    }
+    binding += key;
+    if (binding in this.bindings) {
+      this.bindings[binding].call(this);
     }
   }
 
-  load(feature) {
-    feature.evaluate(this);
-    this.showStatus(feature.name + ' is loaded');
+  setBinding(key, value) {
+    this.bindings[key] = value;
+  }
+  
+  async load(feature) {
+    const module = await import(feature);
+    module.load.call(this);
+    console.log(module.name + ' loaded');
   }
 
   afterLoad() {

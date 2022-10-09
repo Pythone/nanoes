@@ -12,9 +12,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 import Nano from './modules/Nano.js';
-import Kb from './features/Kb.js';
 
 const nano = new Nano('file-name', 'edit-window', 'status-bar', 'cursor');
-nano.load(new Kb());
+nano.load('../features/kb.js');
 nano.afterLoad();
