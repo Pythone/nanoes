@@ -17,31 +17,36 @@ export default class File {
 
   #content;
 
-  #isReadOnly;
+  #readOnly;
 
-  constructor(name) {
+  constructor(name, content, readOnly) {
     this.#name = name;
-    this.#content = '';
+    this.#content = content;
+    this.#readOnly = readOnly;
   }
 
   get name() {
     return this.#name;
   }
 
+  set name(value) {
+    this.#name = value;
+  }
+
   get content() {
     return this.#content;
   }
 
-  get isReadOnly() {
-    return this.#isReadOnly;
+  get readOnly() {
+    return this.#readOnly;
   }
 
-  set isReadOnly(value) {
-    this.#isReadOnly = value;
+  set readOnly(value) {
+    this.#readOnly = value;
   }
 
-  insert(character) {
-    if (this.#isReadOnly) {
+  insertChar(character) {
+    if (this.#readOnly) {
       return false;
     }
     this.#content += character;

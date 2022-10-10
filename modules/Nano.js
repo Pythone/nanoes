@@ -30,19 +30,24 @@ export default class Nano {
 
   #cursor;
 
+  #keybindings;
+
+  #features;
+
   constructor(fileName, editWindow, statusBar, cursor) {
     this.#version = '1.0.0';
-    this.#shownFile = null;
     document.getElementById('version').appendChild(document.createTextNode(this.#version));
     this.#openedFiles = [];
+    this.#shownFile = null;
     this.#fileName = document.getElementById(fileName);
     this.#editWindow = document.getElementById(editWindow);
     this.#editWindow.focus();
     this.#editWindow.addEventListener('keydown', (event) => this.listen(event));
     this.#statusBar = document.getElementById(statusBar);
     this.#cursor = document.getElementById(cursor);
-    this.visit(new File('New file'));
-    this.bindings = {};
+    this.visitFile(this.newFile('new file'));
+    this.#keybindings = {};
+    this.#features = [];
   }
 
   get version() {
@@ -57,52 +62,94 @@ export default class Nano {
     return this.#shownFile;
   }
 
-  createFile(name) {
-    return new File(name);
+  get fileName() {
+    return this.#fileName;
   }
 
-  open(file) {
-    this.#openedFiles.push(file);
+  get editWindow() {
+    return this.#editWindow;
   }
 
-  show(file) {
-    for (let i = 0; i < this.#openedFiles.length; i += 1) {
-      if (this.#openedFiles[i] === file) {
+  get statusBar() {
+    return this.#statusBar;
+  }
+
+  get cursor() {
+    return this.#cursor;
+  }
+
+  get keybindings() {
+    return this.#keybindings;
+  }
+
+  get features() {
+    return this.#features;
+  }
+
+  newFile(name, content = '', readOnly = false) {
+    return new File(name, content, readOnly);
+  }
+
+  openFile(file) {
+    this.openedFiles.push(file);
+  }
+
+  showFile(file) {
+    for (let i = 0; i < this.openedFiles.length; i += 1) {
+      if (this.openedFiles[i] === file) {
         this.#shownFile = file;
         break;
       }
     }
-    while (this.#fileName.firstChild) {
-      this.#fileName.removeChild(this.#fileName.firstChild);
+    while (this.fileName.firstChild) {
+      this.fileName.removeChild(this.fileName.firstChild);
     }
-    this.#fileName.appendChild(document.createTextNode(file.name));
-    Nano.#clear(this.#editWindow);
-    this.#editWindow.appendChild(this.#cursor);
-    for (let i = 0; i < this.#shownFile.content.length; i += 1) {
-      const character1 = this.#shownFile.content.charAt(i);
-      const character2 = this.#shownFile.content.charAt(i + 1);
+    this.fileName.appendChild(document.createTextNode(file.name));
+    this.clear(this.editWindow);
+    this.editWindow.appendChild(this.cursor);
+    for (let i = 0; i < this.shownFile.content.length; i += 1) {
+      const character1 = this.shownFile.content.charAt(i);
+      const character2 = this.shownFile.content.charAt(i + 1);
       if (character1 === '\\' && character2 === 'n') {
-        this.insertNewLine();
+        this.newline();
         i += 1;
       } else {
-        this.insert(character1);
+        this.insertChar(character1);
       }
     }
   }
 
-  visit(file) {
-    this.open(file);
-    this.show(file);
+  visitFile(file) {
+    this.openFile(file);
+    this.showFile(file);
   }
 
-  delete() {
+  previousFile() {
+    const file = this.openedFiles[this.openedFiles.indexOf(this.shownFile) - 1];
+    if (file) {
+      this.showFile(file);
+    } else {
+      this.showStatus('no preceding file to be switched to', 1);
+    }
+  }
+
+  nextFile() {
+    const file = this.openedFiles[this.openedFiles.indexOf(this.shownFile) + 1];
+    if (file) {
+      this.showFile(file);
+    } else {
+      this.showStatus('no succeeding file to be switched to', 1);
+    }
+  }
+
+  deleteBackwardChar() {
     const node = this.#cursor.previousSibling;
     if (node) {
       this.#editWindow.removeChild(node);
     }
   }
 
-  static #clear(node) {
+  clear(node) {
     if (!node) {
       return;
     }
@@ -111,17 +158,17 @@ export default class Nano {
     }
   }
 
-  insertNewLine() {
+  newline() {
     this.#editWindow.insertBefore(document.createElement('br'), this.#cursor);
   }
 
-  insert(character) {
+  insertChar(character) {
     this.#editWindow.insertBefore(document.createTextNode(character), this.#cursor);
   }
 
-  showStatus(text, code) {
-    Nano.#clear(this.#statusBar);
-    this.#statusBar.appendChild(document.createTextNode(text));
+  showStatus(string, code) {
+    this.clear(this.#statusBar);
+    this.#statusBar.appendChild(document.createTextNode(string));
     switch (code) {
     case 0:
       this.#statusBar.parentNode.style.backgroundColor = '#fff';
@@ -138,6 +185,14 @@ export default class Nano {
     }
   }
 
+  message(string) {
+    this.showStatus(string, 0);
+  }
+
+  error(string) {
+    this.showStatus(string, 1);
+  }
+
   listen(event) {
     let binding = '';
     event.preventDefault();
@@ -145,38 +200,45 @@ export default class Nano {
       this.#statusBar.parentNode.style.visibility = 'hidden';
     }
     const {
-      key, ctrlKey, altKey, shiftKey,
+      key, ctrlKey, altKey
     } = event;
     if (ctrlKey) {
-      binding += 'C ';
+      binding += 'Control ';
     }
     if (altKey) {
-      binding += 'M ';
+      binding += 'Alt ';
     }
     if (key.length < 2 && binding.length < 1) {
-      if (this.shownFile.insert(key)) {
-        this.insert(key);
+      if (this.shownFile.insertChar(key)) {
+        this.insertChar(key);
       } else {
-        this.showStatus('file is read-only', 1);
+        this.message('file is read-only', 1);
       }
     }
     binding += key;
-    if (binding in this.bindings) {
-      this.bindings[binding].call(this);
+    if (binding in this.keybindings) {
+      this.keybindings[binding].call(this);
     }
   }
 
-  setBinding(key, value) {
-    this.bindings[key] = value;
+  globalSetKey(key, value) {
+    this.keybindings[key] = value;
   }
   
   async load(feature) {
-    const module = await import(feature);
-    module.load.call(this);
-    console.log(module.name + ' loaded');
+    const module = await import('../features/' + feature + '.js');
+    module.load(this);
+    this.features[module.name] = module;
   }
 
-  afterLoad() {
-    this.showStatus("Welcome to nanoes. For basic help, type Ctrl+G.");
+  unload(feature) {
+    feature.unload(this);
+    delete this.features[feature];
+  }
+
+  exit () {
+    for (const key in this.features) {
+      this.unload(this.features[key]);
+    }
   }
 }

@@ -15,46 +15,31 @@
 
 export const name = 'kb';
 
-export function load() {
-  this.setBinding("C g", function()  {
-    const file = this.createFile('help');
-    file.insert(`^key = ctrl + key\n
-^g to get help\\n
-^o to write out\\n
-^w for where is\\n
-^k to cut text\\n
-^j to justify\\n
-^c for current position\\n
-^x to exit\\n
-^r to read file\\n
-^\\ to replace\\n
-^u to paste text\\n
-^t to spell\\n
-^_ to go to line`);
-    file.isReadOnly = true;
-    this.visit(file);
+export function load(nano) {
+  nano.message(name + ' loaded');
+  nano.globalSetKey('Control g', () => {
+    nano.visitFile(nano.newFile('help', 'hello world', true));
   });
-  this.setBinding("M <", function() {
-    const file = this.openedFiles[this.openedFiles.indexOf(this.shownFile) - 1];
-          if (file) {
-            this.show(file);
-          } else {
-            this.showStatus('no preceding file to be switched to', 1);
-          }
+  nano.globalSetKey('Alt <', () => {
+    nano.previousFile();
   });
-  this.setBinding("M >", function() {
-    const file = this.openedFiles[this.openedFiles.indexOf(this.shownFile) + 1];
-          if (file) {
-            this.show(file);
-          } else {
-            this.showStatus('no succeeding file to be switched to', 1);
-          }
+  nano.globalSetKey('Alt >', () => {
+    nano.nextFile();
   });
-  this.setBinding("Backspace", function() {
-    this.delete();
+  nano.globalSetKey('Backspace', () => {
+    nano.deleteBackwardChar();
   });
-  this.setBinding("Enter", function() {
-    this.shownFile.insert('\n');
-    this.insertNewLine();
+  nano.globalSetKey('Delete', () => {
+    nano.deleteForwardChar();
   });
+  nano.globalSetKey('Enter', () => {
+    nano.newline();
+  });
+  nano.globalSetKey('Control x', () => {
+    nano.exit();
+  });
+};
+
+export function unload(nano) {
+  nano.message(name + ' unloaded');
 }
