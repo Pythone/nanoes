@@ -129,7 +129,7 @@ export default class Nano {
     if (file) {
       this.showFile(file);
     } else {
-      this.showStatus('no preceding file to be switched to', 1);
+      this.message('no preceding file to be switched to');
     }
   }
 
@@ -138,7 +138,7 @@ export default class Nano {
     if (file) {
       this.showFile(file);
     } else {
-      this.showStatus('no succeeding file to be switched to', 1);
+      this.error('no succeeding file to be switched to');
     }
   }
 
