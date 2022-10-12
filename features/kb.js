@@ -15,27 +15,76 @@
 
 export const name = 'kb';
 
+export function whatColumn(nano) {
+  let i;
+  let node;
+  for (i = 0, node = nano.cursor;
+       node && node.nodeName !== 'BR';
+       i++,node = node.previousSibling) {}
+  return i;
+}
+
+export function nextLine(nano) {
+  const column = whatColumn(nano);
+  console.log(whatColumn(nano));
+  while (nano.cursor.nextSibling &&
+         nano.cursor.nextSibling.nodeName !== 'BR') {
+    nano.forwardChar();
+  }
+  for (let i = 0; i < column; i++) {
+    console.log(i);
+    nano.forwardChar();
+  }
+}
+
+export function previousLine(nano) {
+}
+
+const helpContent = 'hello world';
+
 export function load(nano) {
   nano.message(name + ' loaded');
-  nano.globalSetKey('Control g', () => {
-    nano.visitFile(nano.newFile('help', 'hello world', true));
-  });
-  nano.globalSetKey('Alt <', () => {
-    nano.previousFile();
-  });
-  nano.globalSetKey('Alt >', () => {
-    nano.nextFile();
-  });
-  nano.globalSetKey('Backspace', () => {
-    nano.deleteBackwardChar();
-  });
-  nano.globalSetKey('Delete', () => {
-    nano.deleteForwardChar();
-  });
   nano.globalSetKey('Enter', () => {
     nano.newline();
   });
-  nano.globalSetKey('Control x', () => {
+  nano.globalSetKey('Backspace', () => {
+    nano.deleteChar();
+  });
+  nano.globalSetKey('Delete', () => {
+    nano.forwardChar();
+    nano.deleteChar();
+  });
+  nano.globalSetKey('ArrowRight', () => {
+    nano.forwardChar();
+  });
+  nano.globalSetKey('ArrowLeft', () => {
+    nano.backwardChar();
+  });
+  nano.globalSetKey('ArrowRight', () => {
+    nano.forwardChar();
+  });
+  nano.globalSetKey('ArrowDown', () => {
+    nextLine(nano);
+  });
+  nano.globalSetKey('ArrowUp', () => {
+    previousLine(nano);
+  });
+  nano.globalSetKey('^g', () => {
+    nano.visitBuffer(nano.createBuffer('help', helpContent, true));
+  });
+  nano.globalSetKey('M-<', () => {
+    nano.previousBuffer();
+  });
+  nano.globalSetKey('M->', () => {
+    nano.nextBuffer();
+  });
+  nano.globalSetKey('^l', () => {
+    // nano.refreshScreen();
+  });
+  nano.globalSetKey('^w', () => {
+    // nano.searchForward();
+  });
+  nano.globalSetKey('^x', () => {
     nano.exit();
   });
 };
