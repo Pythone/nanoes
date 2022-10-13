@@ -42,6 +42,8 @@ export default class Nano {
 
   #features;
 
+  #commands;
+
   constructor(titleBar, title, bufferName, editWindow, cursor, statusBar, helpLines) {
     this.#titleBar = document.getElementById(titleBar);
     this.#name = 'nano';
@@ -59,6 +61,7 @@ export default class Nano {
     this.visitBuffer(this.createBuffer('new buffer'));
     this.#keybindings = {};
     this.#features = [];
+    this.#commands = {};
   }
 
   get titleBar() {
@@ -111,6 +114,10 @@ export default class Nano {
 
   get features() {
     return this.#features;
+  }
+
+  get commands() {
+    return this.#commands;
   }
 
   createBuffer(name, content = '', readOnly = false) {
@@ -205,6 +212,28 @@ export default class Nano {
     }
   }
 
+  moveBeginningOfLine() {
+    let counter = 0;
+    while (this.cursor.previousSibling &&
+           this.cursor.previousSibling !== 'BR') {
+      this.backwardChar();
+      counter++;
+    }
+    this.backwardChar();
+    return counter;
+  }
+
+  moveEndOfLine() {
+    let counter = 0;
+    while (this.cursor.nextSibling &&
+           this.cursor.nextSibling !== 'BR') {
+      this.forwardChar();
+      counter++;
+    }
+    this.forwardChar();
+    return counter;
+  }
+  
   showStatus(string, code) {
     this.clearNode(this.#statusBar);
     this.statusBar.appendChild(document.createTextNode(string));
@@ -273,11 +302,36 @@ export default class Nano {
   unload(feature) {
     feature.unload(this);
     delete this.features[feature];
+    this.unregisterExtendedCommand(feature);
   }
 
-  exit () {
+  exit() {
     for (const key in this.features) {
       this.unload(this.features[key]);
+    }
+  }
+
+  registerExtendedCommand(featureName, commandName, commandFunction) {
+    if (!this.commands[featureName]) {
+      this.commands[featureName] = {};
+    }
+    this.commands[featureName][commandName] = commandFunction;
+  }
+
+  unregisterExtendedCommand(featureName, commandName = null) {
+    if (commandName) {
+      delete this.commands[featureName][commandName];
+    } else {
+     delete this.commands[featureName]; 
+    }
+  }
+
+  executeExtendedCommand(featureName, commandName) {
+    if (this.commands[featureName][commandName]) {
+      const value = this.commands[featureName][commandName](this);
+      if (value) {
+      this.message(value);
+    }
     }
   }
 }

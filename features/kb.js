@@ -16,34 +16,49 @@
 export const name = 'kb';
 
 export function whatColumn(nano) {
+  const column = nano.moveBeginningOfLine();
   let i;
-  let node;
-  for (i = 0, node = nano.cursor;
-       node && node.nodeName !== 'BR';
-       i++,node = node.previousSibling) {}
-  return i;
+  for (i = 0; i < column; i++) {
+    nano.forwardChar();
+  }
+  return column;
 }
 
 export function nextLine(nano) {
   const column = whatColumn(nano);
-  console.log(whatColumn(nano));
-  while (nano.cursor.nextSibling &&
-         nano.cursor.nextSibling.nodeName !== 'BR') {
-    nano.forwardChar();
-  }
+  nano.moveEndOfLine();
   for (let i = 0; i < column; i++) {
-    console.log(i);
     nano.forwardChar();
   }
 }
 
 export function previousLine(nano) {
+  const column = whatColumn(nano);
+  nano.moveBeginningOfLine();
+  nano.moveBeginningOfLine();
+  for (let i = 0; i < column; i++) {
+    nano.forwardChar();
+  }
 }
 
-const helpContent = 'hello world';
+export function backwardWord(nano) {
+  const word = [];
+  while (nano.cursor.previousSibling &&
+         nano.cursor.previousSibling.nodeValue !== ' ') {
+    word.push(nano.cursor.previousSibling.nodeValue);
+    nano.backwardChar();
+  }
+  return word.reverse().join('');
+}
+
+export const helpContent = 'hello world';
 
 export function load(nano) {
   nano.message(name + ' loaded');
+  nano.registerExtendedCommand(name, 'backwardWord', backwardWord);
+  nano.registerExtendedCommand(name, 'whatColumn', whatColumn);
+  nano.registerExtendedCommand(name, 'nextLine', nextLine);
+  nano.registerExtendedCommand(name, 'previousLine', previousLine(nano));
   nano.globalSetKey('Enter', () => {
     nano.newline();
   });
@@ -60,8 +75,8 @@ export function load(nano) {
   nano.globalSetKey('ArrowLeft', () => {
     nano.backwardChar();
   });
-  nano.globalSetKey('ArrowRight', () => {
-    nano.forwardChar();
+  nano.globalSetKey('^ArrowLeft', () => {
+    backwardWord(nano);
   });
   nano.globalSetKey('ArrowDown', () => {
     nextLine(nano);
@@ -86,6 +101,9 @@ export function load(nano) {
   });
   nano.globalSetKey('^x', () => {
     nano.exit();
+  });
+  nano.globalSetKey('^E', () => {
+    nano.executeExtendedCommand(name, backwardWord(nano));
   });
 };
 
