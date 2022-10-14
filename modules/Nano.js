@@ -32,6 +32,12 @@ export default class Nano {
 
   #statusBar;
 
+  #status;
+
+  #prompt;
+
+  #input;
+
   #helpLines;
 
   #openedBuffers;
@@ -44,24 +50,36 @@ export default class Nano {
 
   #commands;
 
+  #promise;
+  
   constructor(titleBar, title, bufferName, editWindow, cursor, statusBar, helpLines) {
     this.#titleBar = document.getElementById(titleBar);
     this.#name = 'nano';
     this.#version = '1.0.0';
     this.#title = document.getElementById('title');
-    this.title.appendChild(document.createTextNode(this.name + ' ' + this.#version));
+    this.title.appendChild(document.createTextNode(this.name + ' ' + this.version));
     this.#openedBuffers = [];
     this.#bufferName = document.getElementById(bufferName);
     this.#editWindow = document.getElementById(editWindow);
-    this.#editWindow.focus();
-    this.#editWindow.addEventListener('keydown', (event) => this.listen(event));
+    this.editWindow.addEventListener('keydown', (event) => this.listenEditWindow(event));
+    this.editWindow.tabIndex = 0;
+    this.editWindow.focus();
     this.#cursor = document.getElementById(cursor);
     this.#statusBar = document.getElementById(statusBar);
+    this.statusBar.tabIndex = 0;
+    this.statusBar.addEventListener('keydown', (event) => this.listenStatusBar(event));
+    this.#status = document.createElement('div');
+    this.statusBar.appendChild(this.status);
+    this.#prompt = document.createTextNode('');
+    this.statusBar.appendChild(this.prompt);
+    this.#input = document.createElement('pre');
+    this.statusBar.appendChild(this.input);
     this.#helpLines = helpLines;
     this.visitBuffer(this.createBuffer('new buffer'));
     this.#keybindings = {};
     this.#features = [];
     this.#commands = {};
+    this.#promise;
   }
 
   get titleBar() {
@@ -94,6 +112,18 @@ export default class Nano {
 
   get statusBar() {
     return this.#statusBar;
+  }
+
+  get status() {
+    return this.#status;
+  }
+
+  get prompt() {
+    return this.#prompt;
+  }
+
+  get input() {
+    return this.#input;
   }
 
   get helpLines() {
@@ -215,28 +245,26 @@ export default class Nano {
   moveBeginningOfLine() {
     let counter = 0;
     while (this.cursor.previousSibling &&
-           this.cursor.previousSibling !== 'BR') {
+           this.cursor.previousSibling.nodeName !== 'BR') {
       this.backwardChar();
       counter++;
     }
-    this.backwardChar();
     return counter;
   }
 
   moveEndOfLine() {
     let counter = 0;
     while (this.cursor.nextSibling &&
-           this.cursor.nextSibling !== 'BR') {
+           this.cursor.nextSibling.nodeName !== 'BR') {
       this.forwardChar();
       counter++;
     }
-    this.forwardChar();
     return counter;
   }
   
   showStatus(string, code) {
-    this.clearNode(this.#statusBar);
-    this.statusBar.appendChild(document.createTextNode(string));
+    this.clearNode(this.status);
+    this.status.appendChild(document.createTextNode(string));
     switch (code) {
     case 0:
       this.statusBar.style.backgroundColor = '#fff';
@@ -248,12 +276,11 @@ export default class Nano {
       break;
     default:
     }
-    if (this.statusBar.style.visibility === 'hidden') {
-      this.statusBar.style.visibility = 'visible';
-    }
-  }
+    this.statusBar.style.visibility = 'visible';
+  }j
 
   message(string) {
+    console.log(string);
     this.showStatus(string, 0);
   }
 
@@ -261,36 +288,59 @@ export default class Nano {
     this.showStatus(string, 1);
   }
 
-  listen(event) {
-    let binding = '';
+  listenEditWindow(event) {
+    let keybinding = '';
     event.preventDefault();
-    if (this.statusBar.style.visibility !== 'hidden') {
-      this.statusBar.style.visibility = 'hidden';
-    }
+    this.statusBar.style.visibility = 'hidden';
+    this.status.textContent = '';
     const {
       key, ctrlKey, altKey
     } = event;
     if (ctrlKey) {
-      binding += '^';
+      keybinding += '^';
     }
     if (altKey) {
-      binding += 'M-';
+      keybinding += 'M-';
     }
-    if (key.length < 2 && binding.length < 1) {
+    if (key.length < 2 && keybinding.length < 1) {
       if (this.shownBuffer.insertChar(key)) {
         this.insertChar(key);
       } else {
         this.message('buffer is read-only', 1);
       }
     }
-    binding += key;
-    if (binding in this.keybindings) {
-      this.keybindings[binding].call(this);
+    keybinding += key;
+    if (keybinding in this.keybindings['editWindow']) {
+      this.keybindings['editWindow'][keybinding]();
     }
   }
 
-  globalSetKey(key, value) {
-    this.keybindings[key] = value;
+  listenStatusBar(event) {
+    let keybinding = '';
+    event.preventDefault();
+    const {
+      key, ctrlKey, altKey
+    } = event;
+    if (ctrlKey) {
+      keybinding += '^';
+    }
+    if (altKey) {
+      keybinding += 'M-';
+    }
+    if (key.length < 2 && keybinding.length < 1) {
+      this.input.appendChild(document.createTextNode(key));
+    }
+    keybinding += key;
+    if (keybinding in this.keybindings['statusBar']) {
+      this.keybindings['statusBar'][keybinding]();
+    }
+  }
+
+  globalSetKey(key, value, mode = 'editWindow') {
+    if (!this.keybindings[mode]) {
+      this.keybindings[mode] = {};
+    }
+    this.keybindings[mode][key] = value;
   }
   
   async load(feature) {
@@ -301,37 +351,54 @@ export default class Nano {
 
   unload(feature) {
     feature.unload(this);
-    delete this.features[feature];
-    this.unregisterExtendedCommand(feature);
+    delete this.features[feature.name];
+    this.unregisterExtendedCommand(feature.name);
   }
 
   exit() {
+    this.editWindow.blur();
     for (const key in this.features) {
       this.unload(this.features[key]);
     }
   }
 
-  registerExtendedCommand(featureName, commandName, commandFunction) {
+  registerExtendedCommand(featureName, command) {
     if (!this.commands[featureName]) {
       this.commands[featureName] = {};
     }
-    this.commands[featureName][commandName] = commandFunction;
+    this.commands[featureName][command.name] = command.bind(this);
   }
-
   unregisterExtendedCommand(featureName, commandName = null) {
     if (commandName) {
       delete this.commands[featureName][commandName];
     } else {
-     delete this.commands[featureName]; 
+      delete this.commands[featureName]; 
     }
   }
 
-  executeExtendedCommand(featureName, commandName) {
-    if (this.commands[featureName][commandName]) {
-      const value = this.commands[featureName][commandName](this);
-      if (value) {
-      this.message(value);
+  executeExtendedCommand(command) {
+    const args = command.split(' ');
+    console.log(args);
+    for (const feature in this.commands) {
+      if (this.commands[feature][args[0]]) {
+      let value;
+      if (feature === this.name) {
+        value = this.commands[feature][args[0]](... args.slice(1, args.length));
+      } else {
+        value = this.commands[feature][args[0]](... [this].concat(args.slice(1, args.length)));
+      }
+      console.log(value);
+      if (value != undefined) {
+        this.message(value);
+      }
+      break;
     }
     }
+  }
+
+  readString(prompt) {
+    this.statusBar.style.visibility = 'visible';
+    this.prompt.textContent = prompt;
+    this.statusBar.focus();
   }
 }

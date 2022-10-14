@@ -27,17 +27,22 @@ export function whatColumn(nano) {
 export function nextLine(nano) {
   const column = whatColumn(nano);
   nano.moveEndOfLine();
-  for (let i = 0; i < column; i++) {
+  for (let i = 0; i < column + 1; i++) {
     nano.forwardChar();
   }
 }
 
 export function previousLine(nano) {
-  const column = whatColumn(nano);
-  nano.moveBeginningOfLine();
-  nano.moveBeginningOfLine();
-  for (let i = 0; i < column; i++) {
+  const d1 = nano.moveBeginningOfLine();
+  nano.backwardChar();
+  const d2 = nano.moveBeginningOfLine();
+  if (d1 < d2) {
+   for (let j = 0; j < d1; j++) {
     nano.forwardChar();
+  } 
+  } else {
+    nano.forwardChar();
+    nano.moveEndOfLine();
   }
 }
 
@@ -55,10 +60,11 @@ export const helpContent = 'hello world';
 
 export function load(nano) {
   nano.message(name + ' loaded');
-  nano.registerExtendedCommand(name, 'backwardWord', backwardWord);
-  nano.registerExtendedCommand(name, 'whatColumn', whatColumn);
-  nano.registerExtendedCommand(name, 'nextLine', nextLine);
-  nano.registerExtendedCommand(name, 'previousLine', previousLine(nano));
+  nano.registerExtendedCommand('nano', nano.message);
+  nano.registerExtendedCommand(name, backwardWord);
+  nano.registerExtendedCommand(name, whatColumn);
+  nano.registerExtendedCommand(name, nextLine);
+  nano.registerExtendedCommand(name, previousLine);
   nano.globalSetKey('Enter', () => {
     nano.newline();
   });
@@ -103,8 +109,28 @@ export function load(nano) {
     nano.exit();
   });
   nano.globalSetKey('^E', () => {
-    nano.executeExtendedCommand(name, backwardWord(nano));
+    nano.readString('command: ');
   });
+  nano.globalSetKey('Enter', () => {
+    nano.statusBar.style.visibility = 'hidden';
+      nano.clearNode(nano.status);
+      nano.prompt.textContent = '';
+    nano.executeExtendedCommand(nano.input.textContent);
+      nano.clearNode(nano.input);
+      nano.editWindow.focus();
+  }, 'statusBar');
+  nano.globalSetKey('Escape', () => {
+    nano.statusBar.style.visibility = 'hidden';
+    nano.clearNode(nano.status);
+    nano.prompt.textContent = '';
+      nano.clearNode(nano.input);
+      nano.editWindow.focus();
+  }, 'statusBar');
+  nano.globalSetKey('Backspace', () => {
+    if (nano.input.lastChild) {
+     nano.input.removeChild(nano.input.lastChild); 
+    }
+  }, 'statusBar');
 };
 
 export function unload(nano) {
