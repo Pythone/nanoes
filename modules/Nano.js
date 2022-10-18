@@ -232,13 +232,32 @@ export default class Nano {
 
   forwardChar() {
     if (this.cursor.nextSibling) {
-      this.editWindow.insertBefore(this.cursor.nextSibling, this.cursor);
+      insert(this.cursor.nextSibling, true);
     }
   }
 
   backwardChar() {
     if (this.cursor.previousSibling) {
-      this.editWindow.insertBefore(this.cursor, this.cursor.previousSibling);
+      insert(this.cursor.previousSibling);
+    }
+  }
+
+  searchForward(character = null) {
+    const node = this.cursor;
+    while (node.nextSibling) {
+      node = node.nextSibling;
+      if (node.nodeValue === character) {
+        return node;
+      }
+    }
+    return null;
+  }
+
+  insert(node, before = true) {
+    if (before) {
+      this.editWindow.insertBefore(this.cursor, node); 
+    } else {
+      this.editWindow.insertBefore(node, this.cursor);
     }
   }
 
@@ -381,18 +400,18 @@ export default class Nano {
     console.log(args);
     for (const feature in this.commands) {
       if (this.commands[feature][args[0]]) {
-      let value;
-      if (feature === this.name) {
-        value = this.commands[feature][args[0]](... args.slice(1, args.length));
-      } else {
-        value = this.commands[feature][args[0]](... [this].concat(args.slice(1, args.length)));
+        let value;
+        if (feature === this.name) {
+          value = this.commands[feature][args[0]](... args.slice(1, args.length));
+        } else {
+          value = this.commands[feature][args[0]](... [this].concat(args.slice(1, args.length)));
+        }
+        console.log(value);
+        if (value != undefined) {
+          this.message(value);
+        }
+        break;
       }
-      console.log(value);
-      if (value != undefined) {
-        this.message(value);
-      }
-      break;
-    }
     }
   }
 
