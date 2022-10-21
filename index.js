@@ -15,6 +15,5 @@
 
 import Nano from './modules/Nano.js';
 
-const nano = new Nano('title-bar', 'title', 'buffer-name', 'edit-window', 'cursor', 'status-bar', 'help-lines');
-nano.load('kb');
-nano.message("Welcome to nanoes. For basic help, type Ctrl+G.");
+const nano = new Nano('title-bar', 'title', 'buffer-name', 'edit-window', 'status-bar', 'help-lines');
+nano.load('kb').then(() => nano.message("Welcome to nanoes. For basic help, type Ctrl+G."));

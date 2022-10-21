@@ -28,8 +28,6 @@ export default class Nano {
 
   #editWindow;
 
-  #cursor;
-
   #statusBar;
 
   #status;
@@ -42,7 +40,7 @@ export default class Nano {
 
   #openedBuffers;
 
-  #shownBuffer;
+  #currentBuffer;
 
   #keybindings;
 
@@ -52,7 +50,7 @@ export default class Nano {
 
   #promise;
   
-  constructor(titleBar, title, bufferName, editWindow, cursor, statusBar, helpLines) {
+  constructor(titleBar, title, bufferName, editWindow, statusBar, helpLines) {
     this.#titleBar = document.getElementById(titleBar);
     this.#name = 'nano';
     this.#version = '1.0.0';
@@ -64,7 +62,6 @@ export default class Nano {
     this.editWindow.addEventListener('keydown', (event) => this.listenEditWindow(event));
     this.editWindow.tabIndex = 0;
     this.editWindow.focus();
-    this.#cursor = document.getElementById(cursor);
     this.#statusBar = document.getElementById(statusBar);
     this.statusBar.tabIndex = 0;
     this.statusBar.addEventListener('keydown', (event) => this.listenStatusBar(event));
@@ -75,7 +72,7 @@ export default class Nano {
     this.#input = document.createElement('pre');
     this.statusBar.appendChild(this.input);
     this.#helpLines = helpLines;
-    this.visitBuffer(this.createBuffer('new buffer'));
+    this.visitBuffer(this.createBuffer('New buffer'));
     this.#keybindings = {};
     this.#features = [];
     this.#commands = {};
@@ -106,10 +103,6 @@ export default class Nano {
     return this.#editWindow;
   }
 
-  get cursor() {
-    return this.#cursor;
-  }
-
   get statusBar() {
     return this.#statusBar;
   }
@@ -134,8 +127,8 @@ export default class Nano {
     return this.#openedBuffers;
   }
 
-  get shownBuffer() {
-    return this.#shownBuffer;
+  get currentBuffer() {
+    return this.#currentBuffer;
   }
 
   get keybindings() {
@@ -150,57 +143,41 @@ export default class Nano {
     return this.#commands;
   }
 
-  createBuffer(name, content = '', readOnly = false) {
-    return new Buffer(name, content, readOnly);
-  }
-
-  openBuffer(buffer) {
+  createBuffer(name, readOnly) {
+    const buffer = new Buffer(name, readOnly);
+    buffer.node.addEventListener('insertChar', event => {
+      if (!event.status) {
+        
+      }
+    });
+    this.editWindow.appendChild(buffer.node);
     this.openedBuffers.push(buffer);
-  }
-
-  showBuffer(buffer) {
-    for (let i = 0; i < this.openedBuffers.length; i += 1) {
-      if (this.openedBuffers[i] === buffer) {
-        this.#shownBuffer = buffer;
-        break;
-      }
-    }
-    while (this.bufferName.firstChild) {
-      this.bufferName.removeChild(this.bufferName.firstChild);
-    }
-    this.bufferName.appendChild(document.createTextNode(buffer.name));
-    this.clearNode(this.editWindow);
-    this.editWindow.appendChild(this.cursor);
-    for (let i = 0; i < this.shownBuffer.content.length; i += 1) {
-      const character1 = this.shownBuffer.content.charAt(i);
-      const character2 = this.shownBuffer.content.charAt(i + 1);
-      if (character1 === '\\' && character2 === 'n') {
-        this.newline();
-        i += 1;
-      } else {
-        this.insertChar(character1);
-      }
-    }
+    return buffer;
   }
 
   visitBuffer(buffer) {
-    this.openBuffer(buffer);
-    this.showBuffer(buffer);
+    if (this.currentBuffer) {
+      this.currentBuffer.hide(); 
+    }
+    this.#currentBuffer = buffer;
+    this.currentBuffer.show();
+    this.clearNode(this.bufferName);
+    this.bufferName.appendChild(document.createTextNode(buffer.name));
   }
 
   previousBuffer() {
-    const buffer = this.openedBuffers[this.openedBuffers.indexOf(this.shownBuffer) - 1];
+    const buffer = this.openedBuffers[this.openedBuffers.indexOf(this.currentBuffer) - 1];
     if (buffer) {
-      this.showBuffer(buffer);
+      this.visitBuffer(buffer);
     } else {
       this.error('no preceding buffer to be switched to');
     }
   }
 
   nextBuffer() {
-    const buffer = this.openedBuffers[this.openedBuffers.indexOf(this.shownBuffer) + 1];
+    const buffer = this.openedBuffers[this.openedBuffers.indexOf(this.currentBuffer) + 1];
     if (buffer) {
-      this.showBuffer(buffer);
+      this.visitBuffer(buffer);
     } else {
       this.error('no succeeding buffer to be switched to');
     }
@@ -216,34 +193,31 @@ export default class Nano {
   }
 
   newline() {
-    this.editWindow.insertBefore(document.createElement('br'), this.cursor);
+    this.currentBuffer.insertChar('\n');
   }
 
   insertChar(character) {
-    this.editWindow.insertBefore(document.createTextNode(character), this.cursor);
+    this.currentBuffer.insertChar(character);
   }
 
   deleteChar() {
-    const node = this.cursor.previousSibling;
-    if (node) {
-      this.editWindow.removeChild(node);
-    }
+    this.currentBuffer.deleteChar();
   }
 
   forwardChar() {
-    if (this.cursor.nextSibling) {
-      insert(this.cursor.nextSibling, true);
+    if (this.currentBuffer.cursor.nextSibling) {
+      this.currentBuffer.node.insertBefore(this.currentBuffer.cursor.nextSibling, this.currentBuffer.cursor);
     }
   }
 
   backwardChar() {
-    if (this.cursor.previousSibling) {
-      insert(this.cursor.previousSibling);
+    if (this.currentBuffer.cursor.previousSibling) {
+      this.currentBuffer.node.insertBefore(this.currentBuffer.cursor, this.currentBuffer.cursor.previousSibling);
     }
   }
 
   searchForward(character = null) {
-    const node = this.cursor;
+    const node = this.currentBuffer.cursor;
     while (node.nextSibling) {
       node = node.nextSibling;
       if (node.nodeValue === character) {
@@ -253,18 +227,10 @@ export default class Nano {
     return null;
   }
 
-  insert(node, before = true) {
-    if (before) {
-      this.editWindow.insertBefore(this.cursor, node); 
-    } else {
-      this.editWindow.insertBefore(node, this.cursor);
-    }
-  }
-
   moveBeginningOfLine() {
     let counter = 0;
-    while (this.cursor.previousSibling &&
-           this.cursor.previousSibling.nodeName !== 'BR') {
+    while (this.currentBuffer.cursor.previousSibling &&
+           this.currentBuffer.cursor.previousSibling.nodeName !== 'BR') {
       this.backwardChar();
       counter++;
     }
@@ -273,8 +239,8 @@ export default class Nano {
 
   moveEndOfLine() {
     let counter = 0;
-    while (this.cursor.nextSibling &&
-           this.cursor.nextSibling.nodeName !== 'BR') {
+    while (this.currentBuffer.cursor.nextSibling &&
+           this.currentBuffer.cursor.nextSibling.nodeName !== 'BR') {
       this.forwardChar();
       counter++;
     }
@@ -299,7 +265,6 @@ export default class Nano {
   }j
 
   message(string) {
-    console.log(string);
     this.showStatus(string, 0);
   }
 
@@ -322,11 +287,7 @@ export default class Nano {
       keybinding += 'M-';
     }
     if (key.length < 2 && keybinding.length < 1) {
-      if (this.shownBuffer.insertChar(key)) {
-        this.insertChar(key);
-      } else {
-        this.message('buffer is read-only', 1);
-      }
+      this.insertChar(key);
     }
     keybinding += key;
     if (keybinding in this.keybindings['editWindow']) {

@@ -37,9 +37,9 @@ export function previousLine(nano) {
   nano.backwardChar();
   const d2 = nano.moveBeginningOfLine();
   if (d1 < d2) {
-   for (let j = 0; j < d1; j++) {
-    nano.forwardChar();
-  } 
+    for (let j = 0; j < d1; j++) {
+      nano.forwardChar();
+    } 
   } else {
     nano.forwardChar();
     nano.moveEndOfLine();
@@ -48,9 +48,9 @@ export function previousLine(nano) {
 
 export function backwardWord(nano) {
   const word = [];
-  while (nano.cursor.previousSibling &&
-         nano.cursor.previousSibling.nodeValue !== ' ') {
-    word.push(nano.cursor.previousSibling.nodeValue);
+  while (nano.currentBuffer.cursor.previousSibling &&
+         nano.currentBuffer.cursor.previousSibling.nodeValue !== ' ') {
+    word.push(nano.currentBuffer.cursor.previousSibling.nodeValue);
     nano.backwardChar();
   }
   return word.reverse().join('');
@@ -91,7 +91,12 @@ export function load(nano) {
     previousLine(nano);
   });
   nano.globalSetKey('^g', () => {
-    nano.visitBuffer(nano.createBuffer('help', helpContent, true));
+    const buffer = nano.createBuffer('Main nano help text');
+    for (const character in helpContent) {
+      buffer.insertChar(helpContent[character]); 
+    }
+    buffer.readOnly = true;
+    nano.visitBuffer(buffer);
   });
   nano.globalSetKey('M-<', () => {
     nano.previousBuffer();
@@ -113,22 +118,22 @@ export function load(nano) {
   });
   nano.globalSetKey('Enter', () => {
     nano.statusBar.style.visibility = 'hidden';
-      nano.clearNode(nano.status);
-      nano.prompt.textContent = '';
+    nano.clearNode(nano.status);
+    nano.prompt.textContent = '';
     nano.executeExtendedCommand(nano.input.textContent);
-      nano.clearNode(nano.input);
-      nano.editWindow.focus();
+    nano.clearNode(nano.input);
+    nano.editWindow.focus();
   }, 'statusBar');
   nano.globalSetKey('Escape', () => {
     nano.statusBar.style.visibility = 'hidden';
     nano.clearNode(nano.status);
     nano.prompt.textContent = '';
-      nano.clearNode(nano.input);
-      nano.editWindow.focus();
+    nano.clearNode(nano.input);
+    nano.editWindow.focus();
   }, 'statusBar');
   nano.globalSetKey('Backspace', () => {
     if (nano.input.lastChild) {
-     nano.input.removeChild(nano.input.lastChild); 
+      nano.input.removeChild(nano.input.lastChild); 
     }
   }, 'statusBar');
 };
